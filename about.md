@@ -5,7 +5,7 @@ permalink: /about/
 ---
 
 I'm a Data Scientist with a fondness for Bayesian statistics and Neural Networks.  
-Look at my [resume](https://raw.githubusercontent.com/westford14/westford14.github.io/master/images/alee91_resume.pdf)!
+Look at my [resume](https://raw.githubusercontent.com/westford14/westford14.github.io/master/images/alee_resume.pdf)!
 
 #### Experience and Projects
 
@@ -53,6 +53,10 @@ Look at my [resume](https://raw.githubusercontent.com/westford14/westford14.gith
 
 BS in Chemistry, Concentration in Biochemistry, Minor in History of Art  
 [Haverford College](https://www.haverford.edu/)
+
+#### Awards
+
+* National Human Genome Research Institute Distinguished Achievement Award
 
 ### Get In Touch
 
