@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Bayesian Neural Networks in Survival Analysis – Alex Lee – Data Scientist with a Public Health Emphasis</title>
+
+    
+    <meta charset="utf-8" />
+    <meta content='text/html; charset=utf-8' http-equiv='Content-Type'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
+
+    
+    <meta name="description" content="Bayesian Neural Networks and You
+
+" />
+    <meta property="og:description" content="Bayesian Neural Networks and You
+
+" />
+    
+    <meta name="author" content="Alex Lee" />
+
+    
+    <meta property="og:title" content="Bayesian Neural Networks in Survival Analysis" />
+    <meta property="twitter:title" content="Bayesian Neural Networks in Survival Analysis" />
+    
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="alternate" type="application/rss+xml" title="Alex Lee - Data Scientist with a Public Health Emphasis" href="/feed.xml" />
+
+    <!-- Created with Jekyll Now - http://github.com/barryclark/jekyll-now -->
+  </head>
+
+  <body>
+    <div class="wrapper-masthead">
+      <div class="container">
+        <header class="masthead clearfix">
+          <a href="/" class="site-avatar"><img src="https://raw.githubusercontent.com/westford14/westford14.github.io/master/images/img.jpg" /></a>
+
+          <div class="site-info">
+            <h1 class="site-name"><a href="/">Alex Lee</a></h1>
+            <p class="site-description">Data Scientist with a Public Health Emphasis</p>
+          </div>
+
+          <nav>
+            <a href="/">Blog</a>
+            <a href="/about">About</a>
+          </nav>
+        </header>
+      </div>
+    </div>
+
+    <div id="main" role="main" class="container">
+      <article class="post">
+  <h1>Bayesian Neural Networks in Survival Analysis</h1>
+
+  <div class="entry">
+    <p>Bayesian Neural Networks and You</p>
+
+<h4 id="overview">Overview</h4>
+
+<p><img src="https://www.kdnuggets.com/wp-content/uploads/bayesian-neon.jpeg" alt="Image of Bayes Theorem" /></p>
+
+<p>Bayesian neural networks definitely sound like a strange combination of two different data science buzzwords, but they can have some very interesting applications.  A typical feed-forward neural network will have, somtimes, many layers of neurons connected to each other.  These connections have weights and biases associated with them, and the constant adjustment of these weights is how the network learns.  The predictive power of neural networks cannot be argued with, but there is an ineteresting issue with them.  Let’s say for a binary classification problem (ie. a presented image is either a dog or not a dog) you want to get the uncertainty associated with this prediction.  A typical neural network will only give you one prediction, which doesn’t help you address this issue.  This is where Bayesian neural networks can help.</p>
+
+<p>In Bayesian neural networks there is a prior distribution over the weights.  By utilizing this probabilistic approach to training, we are now able to consider the entire distribution for our predictions.  Now, when we want to know the uncertainity of our binary classifier, we can now get a thousand guesses from the neural network and, thus, create confidence intervals of its predictive power.  A more indepth explanation of Bayesian neural networks can be found <a href="https://arxiv.org/abs/1801.07710">here</a> and <a href="https://www.cs.toronto.edu/~radford/bnn.book.html">here</a>.</p>
+
+<h4 id="use-case">Use Case</h4>
+
+<p>In epidemiology we love working with cohort data.  Cohort data being repeated measures of the same population over a long stretch of time.  We like working with this data because it gives us an insight into how people’s health changes over time and what lifestyle choices they made that impacted their health.  One thing that is particularly interesting that I’ve been working on is trying to predict when someone might have a cardiac event.  Instead of purely trying to predict whether or not someone will have an event, there is more power in being able to say that someone will have an event in 5 years given their current characteristics.  For example, let’s say you have the <a href="https://wwwn.cdc.gov/nchs/nhanes/nhefs/default.aspx/">NHANES Epidemiologic Followup Study</a>, and you want to be able to make this type of prediction; I will show you how this can be done!</p>
+
+<h4 id="code">Code</h4>
+
+<p>This code is all in Python and uses the <a href="http://pyro.ai/">Pyro</a> and <a href="https://pytorch.org/">PyTorch</a> libraries. Let’s import the necessary libraries:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="n">pd</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="n">plt</span>
+<span class="kn">from</span> <span class="nn">sklearn.preprocessing</span> <span class="kn">import</span> <span class="n">OneHotEncoder</span>
+<span class="kn">from</span> <span class="nn">sklearn.model_selection</span> <span class="kn">import</span> <span class="n">train_test_split</span>
+
+<span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="n">nn</span>
+<span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="n">F</span>
+<span class="kn">from</span> <span class="nn">torch.autograd</span> <span class="kn">import</span> <span class="n">Variable</span>
+
+<span class="kn">import</span> <span class="nn">pyro</span>
+<span class="kn">from</span> <span class="nn">pyro.distributions</span> <span class="kn">import</span> <span class="n">Normal</span>
+<span class="kn">from</span> <span class="nn">pyro.infer</span> <span class="kn">import</span> <span class="n">SVI</span>
+<span class="kn">from</span> <span class="nn">pyro.optim</span> <span class="kn">import</span> <span class="n">Adam</span>
+
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm_notebook</span>
+</code></pre></div></div>
+
+<p>I’m using Pyro version 0.1.2 and PyTorch version 0.3.1.post2.</p>
+
+<p>I’m making assumptions about the dataset that we’re using, but let’s say we have an ideal, clean dataset that has a bunch of columns with baseline characteristics.  These might include the person’s age, sex, average consumption of different types of foods, whether or not this person is a smoker, etc.  I’m also assuming that there is a column that has the number of months until the person had a cardiac event.  This ranges from 0 (no event) to 60 for example.  The number 60 says that particular person had a cardiac event 5 years into the study.  We will then want to create our dataset where we one-hot encode the time variable.  This changes the problem from a binary classification into a categorical classification problem.  I’ve also found I get better performance when I scale the other values in the dataset rather than leave them at their original value.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s">'example.csv'</span><span class="p">)</span>
+<span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">around</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s">'y'</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+<span class="n">enc</span> <span class="o">=</span> <span class="n">OneHotEncoder</span><span class="p">()</span>
+<span class="n">y_hot</span> <span class="o">=</span> <span class="n">enc</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">toarray</span><span class="p">()</span>
+
+<span class="n">temp</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">drop</span><span class="p">(</span><span class="s">'y'</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="n">temp</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">tolist</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]]</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">scale</span> <span class="o">=</span> <span class="n">StandardScaler</span><span class="p">()</span>
+<span class="n">X</span> <span class="o">=</span> <span class="n">scale</span><span class="o">.</span><span class="n">fit_transform</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>Let’s now create our models.  This is a really simple feedforward network:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">BNN</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">columns</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">BNN</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">__init__</span><span class="p">()</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">columns</span> <span class="o">*</span> <span class="o">.</span><span class="mi">75</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">columns</span><span class="p">,</span> <span class="n">hidden</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">predict</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
+        
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">selu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">hidden</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">selu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">x</span>
+</code></pre></div></div>
+
+<p>We then instantiate the <code class="highlighter-rouge">model</code> and <code class="highlighter-rouge">guide</code> objects. The model function will define priors over for the weights and biases for each layer of our neural network.  The priors will be pulled from a Normal distribution between 0 and 1.  I haven’t tested changing distributions and changing scales yet, but that is definitely a next step to explore.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">model</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">x_data</span> <span class="o">=</span> <span class="n">X</span>
+    <span class="n">y_data</span> <span class="o">=</span> <span class="n">y</span>
+    
+    <span class="c"># First Layer</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">second_layer</span><span class="p">,</span> <span class="n">first_layer</span><span class="p">))</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">second_layer</span><span class="p">,</span> <span class="n">first_layer</span><span class="p">))</span>
+    <span class="n">bias_mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">second_layer</span><span class="p">))</span>
+    <span class="n">bias_sigma</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">second_layer</span><span class="p">))</span>
+    <span class="n">w_prior</span><span class="p">,</span> <span class="n">b_prior</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">),</span> <span class="n">Normal</span><span class="p">(</span><span class="n">bias_mu</span><span class="p">,</span> <span class="n">bias_sigma</span><span class="p">)</span>
+    
+    <span class="c"># Second Layer</span>
+    <span class="n">mu2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">second_layer</span><span class="p">))</span>
+    <span class="n">sigma2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">second_layer</span><span class="p">))</span>
+    <span class="n">bias_mu2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">bias_sigma2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">w_prior2</span><span class="p">,</span> <span class="n">b_prior2</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mu2</span><span class="p">,</span> <span class="n">sigma2</span><span class="p">),</span> <span class="n">Normal</span><span class="p">(</span><span class="n">bias_mu2</span><span class="p">,</span> <span class="n">bias_sigma2</span><span class="p">)</span>
+    
+    <span class="n">priors</span> <span class="o">=</span> <span class="p">{</span><span class="s">"hidden.weight"</span><span class="p">:</span> <span class="n">w_prior</span><span class="p">,</span>
+             <span class="s">"hidden.bias"</span><span class="p">:</span> <span class="n">b_prior</span><span class="p">,</span>
+             <span class="s">"predict.weight"</span><span class="p">:</span> <span class="n">w_prior2</span><span class="p">,</span>
+             <span class="s">"predict.bias"</span><span class="p">:</span> <span class="n">b_prior2</span><span class="p">}</span>
+    
+    <span class="n">lifted_module</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">random_module</span><span class="p">(</span><span class="s">"module"</span><span class="p">,</span> <span class="n">bnn</span><span class="p">,</span> <span class="n">priors</span><span class="p">)</span>
+    <span class="n">lifted_reg_model</span> <span class="o">=</span> <span class="n">lifted_module</span><span class="p">()</span>
+    
+    <span class="n">prediction_mean</span> <span class="o">=</span> <span class="n">lifted_reg_model</span><span class="p">(</span><span class="n">x_data</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span>
+    <span class="n">pyro</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="s">"obs"</span><span class="p">,</span>
+               <span class="n">Normal</span><span class="p">(</span><span class="n">prediction_mean</span><span class="p">,</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">x_data</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)))),</span>
+               <span class="n">obs</span><span class="o">=</span><span class="n">y_data</span><span class="o">.</span><span class="n">squeeze</span><span class="p">())</span>
+</code></pre></div></div>
+
+<p>But, in order to learn, we must “guide” the model.  This can be thought of as a parameterized family of distributions over the weights and biases.  We also will make these parameters trainable so that the network can learn.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">guide</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="c">#First Layer</span>
+    <span class="n">w_mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">second_layer</span><span class="p">,</span> <span class="n">first_layer</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">w_log_sig</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">second_layer</span><span class="p">,</span> <span class="n">first_layer</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">b_mu</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="n">second_layer</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">b_log_sig</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">second_layer</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="n">mw_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">'guide_mean_weight'</span><span class="p">,</span> <span class="n">w_mu</span><span class="p">)</span>
+    <span class="n">sw_param</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">"guide_log_sigma_weight"</span><span class="p">,</span> <span class="n">w_log_sig</span><span class="p">))</span>
+    <span class="n">mb_param</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">'guide_mean_bias'</span><span class="p">,</span> <span class="n">b_mu</span><span class="p">)</span>
+    <span class="n">sb_param</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">"guide_log_sigma_bias"</span><span class="p">,</span> <span class="n">b_log_sig</span><span class="p">))</span>
+    
+    <span class="n">w_dist</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mw_param</span><span class="p">,</span> <span class="n">sw_param</span><span class="p">)</span>
+    <span class="n">b_dist</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mb_param</span><span class="p">,</span> <span class="n">sb_param</span><span class="p">)</span>
+    
+    <span class="c">#Second Layer</span>
+    <span class="n">w_mu2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">second_layer</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">w_log_sig2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">second_layer</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">b_mu2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    <span class="n">b_log_sig2</span> <span class="o">=</span> <span class="n">Variable</span><span class="p">(</span><span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+    
+    <span class="n">mw_param2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">"guide_mean_weight2"</span><span class="p">,</span> <span class="n">w_mu2</span><span class="p">)</span>
+    <span class="n">sw_param2</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">"guide_log_sigma_weight2"</span><span class="p">,</span> <span class="n">w_log_sig2</span><span class="p">))</span>
+    <span class="n">mb_param2</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">"guide_mean_bias2"</span><span class="p">,</span> <span class="n">b_mu2</span><span class="p">)</span>
+    <span class="n">sb_param2</span> <span class="o">=</span> <span class="n">softplus</span><span class="p">(</span><span class="n">pyro</span><span class="o">.</span><span class="n">param</span><span class="p">(</span><span class="s">"guide_log_sigma_bias2"</span><span class="p">,</span> <span class="n">b_log_sig2</span><span class="p">))</span>
+    
+    <span class="n">w_dist2</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mw_param2</span><span class="p">,</span> <span class="n">sw_param2</span><span class="p">)</span>
+    <span class="n">b_dist2</span> <span class="o">=</span> <span class="n">Normal</span><span class="p">(</span><span class="n">mb_param2</span><span class="p">,</span> <span class="n">sb_param2</span><span class="p">)</span>
+    
+    <span class="n">dists</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s">"hidden.weight"</span><span class="p">:</span> <span class="n">w_dist</span><span class="p">,</span>
+        <span class="s">"hidden.bias"</span><span class="p">:</span> <span class="n">b_dist</span><span class="p">,</span>
+        <span class="s">"predict.weight"</span><span class="p">:</span> <span class="n">w_dist2</span><span class="p">,</span>
+        <span class="s">"predict.bias"</span><span class="p">:</span> <span class="n">b_dist2</span>
+    <span class="p">}</span>
+    
+    <span class="n">lifted_module</span> <span class="o">=</span> <span class="n">pyro</span><span class="o">.</span><span class="n">random_module</span><span class="p">(</span><span class="s">"module"</span><span class="p">,</span> <span class="n">bnn</span><span class="p">,</span> <span class="n">dists</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">lifted_module</span><span class="p">()</span>
+</code></pre></div></div>
+
+<p>Whew.  Now that we have set everything up we can then declare our network and uses <a href="http://www.columbia.edu/~jwp2128/Papers/HoffmanBleiWangPaisley2013.pdf">stochastic variational inference</a> to train our model.  I’m also using the <a href="https://arxiv.org/abs/1412.6980">Adam</a> optimizer to train the model.  I’m also storing the loss after every thousandth epoch, so I can subsequently plot the losses to ensure that the model is actually learning over time.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">softplus</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Softplus</span><span class="p">()</span>
+
+<span class="n">first_layer</span> <span class="o">=</span> <span class="n">X_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">second_layer</span> <span class="o">=</span> <span class="nb">round</span><span class="p">(</span><span class="n">first_layer</span> <span class="o">*</span> <span class="o">.</span><span class="mi">75</span><span class="p">)</span>
+<span class="n">bnn</span> <span class="o">=</span> <span class="n">BNN</span><span class="p">(</span><span class="n">columns</span><span class="o">=</span><span class="n">first_layer</span><span class="p">,</span> <span class="n">outputs</span><span class="o">=</span><span class="n">y_hot</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="n">optim</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">({</span><span class="s">"lr"</span><span class="p">:</span> <span class="mf">0.001</span><span class="p">})</span>
+<span class="n">svi</span> <span class="o">=</span> <span class="n">SVI</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">guide</span><span class="p">,</span> <span class="n">optim</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s">"ELBO"</span><span class="p">)</span>
+
+<span class="n">pyro</span><span class="o">.</span><span class="n">clear_param_store</span><span class="p">()</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">tqdm_notebook</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">20000</span><span class="p">)):</span>
+    <span class="n">ep_loss</span> <span class="o">=</span> <span class="mf">0.0</span>
+    
+    <span class="n">perm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">))</span>
+    <span class="n">x_epoch</span> <span class="o">=</span> <span class="n">X_train</span><span class="p">[</span><span class="n">perm</span><span class="p">]</span>
+    <span class="n">y_epoch</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">y_train</span><span class="p">[</span><span class="n">perm</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    
+    <span class="n">ep_loss</span> <span class="o">+=</span> <span class="n">svi</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">x_epoch</span><span class="p">)),</span>
+                        <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">y_epoch</span><span class="p">)))</span>
+    <span class="n">loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ep_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">))</span>
+    
+    <span class="k">if</span> <span class="n">j</span> <span class="o">%</span> <span class="mi">1000</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"Epoch {0}, average loss: {1:.4f}"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">ep_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)))</span>
+</code></pre></div></div>
+
+
+  </div>
+
+  <div class="date">
+    Written on May 16, 2018
+  </div>
+
+  
+</article>
+    </div>
+
+    <div class="wrapper-footer">
+      <div class="container">
+        <footer class="footer">
+          
+<a href="mailto:westford14@gmail.com"><i class="svg-icon email"></i></a>
+
+
+<a href="https://github.com/westford14/westford14.github.io"><i class="svg-icon github"></i></a>
+
+<a href="https://www.linkedin.com/in/https://www.linkedin.com/in/alex-lee-59078979"><i class="svg-icon linkedin"></i></a>
+
+
+
+
+
+
+        </footer>
+      </div>
+    </div>
+
+    
+  </body>
+</html>
