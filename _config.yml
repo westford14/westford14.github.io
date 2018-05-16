@@ -1,9 +1,21 @@
- github: [metadata]
- encoding: UTF-8
- kramdown:
-   input: GFM
-   hard_wrap: false
- future: true
- jailed: false
- theme: jekyll-theme-midnight
- gfm_quirks: paragraph_end
+github: [metadata]
+encoding: UTF-8
+kramdown:
+  input: GFM
+  hard_wrap: false
+future: true
+jailed: false
+theme: jekyll-theme-midnight
+gfm_quirks: paragraph_end
+
+name: Alex Lee
+description: Data Scientist with a Public Health Emphasis
+avatar: https://raw.githubusercontent.com/westford14/westford14.github.io/master/images/img.jpg
+
+footer-links:
+  email: westford14@gmail.com
+  github: westford14/westford14.github.io
+  linkedin: https://www.linkedin.com/in/alex-lee-59078979
+  
+url: http://westford14.github.io
+baseurl: "" 
