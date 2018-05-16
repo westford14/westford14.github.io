@@ -1,24 +1,27 @@
 ---
 layout: page
-title: About
+title: Who Am I?
 permalink: /about/
 ---
 
-I'm a Data Scientist with a strong affinity for Bayesian statistics and Neural Networks.
+I'm a Data Scientist with a fondness for Bayesian statistics and Neural Networks.
 
 #### Experience and Projects
 
-##### Machine Vision / Image Classification:
-* 
+* Machine Vision / Image Classification \(Keras, TensorFlow\):
+	* Developed a convolutional neural network that detects anomalies in internally generated images
+	* This reduced the anomaly detection process from over a week to under a day
+* Title and Abstract Classificatio \(Keras, TensorFlow\):
+	* Built a NLP platform that will categorize scientific articles for inclusion in our analysis based on their title and abstracts
 
 ##### Languages
 * Python
 * R
 * C/C++
-* Stata 
 * Scala
 * HTML/CSS
 * MySQL
+* Stata
 
 ##### Technologies
 * AWS
