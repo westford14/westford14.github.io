@@ -229,6 +229,33 @@
         <span class="k">print</span><span class="p">(</span><span class="s">"Epoch {0}, average loss: {1:.4f}"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">ep_loss</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">X_train</span><span class="p">)))</span>
 </code></pre></div></div>
 
+<p>After the 20,000 iterations, we can see our loss has drastically decreased.</p>
+
+<p><img src="https://raw.githubusercontent.com/westford14/westford14.github.io/master/images/loss_convergence.png" alt="Graph of Loss" /></p>
+
+<p>We can also now predict how long into the future someone might have a cardiac event.  But, most importantly, we get uncertainty around this.  So if we make a thousand predictions based of one person’s characteristics, we can now describe the distribution of time intervals that an event may happen in!  Pretty exciting!</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">preds</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm_notebook</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1000</span><span class="p">)):</span>
+    <span class="n">sampled_reg_model</span> <span class="o">=</span> <span class="n">guide</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">X_test</span><span class="p">)),</span> <span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">y_test</span><span class="p">)))</span>
+    <span class="n">pred</span> <span class="o">=</span> <span class="n">sampled_reg_model</span><span class="p">(</span><span class="n">Variable</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">(</span><span class="n">X_test</span><span class="p">)))</span>
+    <span class="n">preds</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span>
+
+<span class="n">preds</span> <span class="o">=</span> <span class="p">[</span><span class="n">softplus</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">preds</span><span class="p">]</span>
+<span class="n">mean</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">low</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> 
+<span class="n">high</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="mf">97.5</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> 
+</code></pre></div></div>
+
+<p>If we’re happy with the performance we can save the model and trained parameters for later use.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">bnn</span><span class="p">,</span> <span class="s">'best_model.p'</span><span class="p">)</span>
+<span class="n">pyro</span><span class="o">.</span><span class="n">get_param_store</span><span class="p">()</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">'best_params.save'</span><span class="p">)</span>
+</code></pre></div></div>
+
+<h4 id="summary">Summary</h4>
+
+<p>In this post, I’ve given an overview of why we might want to use Bayesian neural networks, how to implement them in Pyro, and how to predict off the trained network.  The combination of probabilitistic programming and neural networks is super cool, and I’m looking forward to see what other uses across different fields people will have for Bayesian neural networks.</p>
 
   </div>
 
