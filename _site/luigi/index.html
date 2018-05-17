@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Luigi – Alex Lee – Data Scientist with a Public Health Emphasis</title>
+
+    
+    <meta charset="utf-8" />
+    <meta content='text/html; charset=utf-8' http-equiv='Content-Type'>
+    <meta http-equiv='X-UA-Compatible' content='IE=edge'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0'>
+
+    
+    <meta name="description" content="ETL Pipelines with Luigi
+
+" />
+    <meta property="og:description" content="ETL Pipelines with Luigi
+
+" />
+    
+    <meta name="author" content="Alex Lee" />
+
+    
+    <meta property="og:title" content="Luigi" />
+    <meta property="twitter:title" content="Luigi" />
+    
+
+    <!--[if lt IE 9]>
+      <script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <link rel="stylesheet" type="text/css" href="/style.css" />
+    <link rel="alternate" type="application/rss+xml" title="Alex Lee - Data Scientist with a Public Health Emphasis" href="/feed.xml" />
+
+    <!-- Created with Jekyll Now - http://github.com/barryclark/jekyll-now -->
+  </head>
+
+  <body>
+    <div class="wrapper-masthead">
+      <div class="container">
+        <header class="masthead clearfix">
+          <a href="/" class="site-avatar"><img src="https://raw.githubusercontent.com/westford14/westford14.github.io/master/images/img.jpg" /></a>
+
+          <div class="site-info">
+            <h1 class="site-name"><a href="/">Alex Lee</a></h1>
+            <p class="site-description">Data Scientist with a Public Health Emphasis</p>
+          </div>
+
+          <nav>
+            <a href="/">Blog</a>
+            <a href="/about">About</a>
+          </nav>
+        </header>
+      </div>
+    </div>
+
+    <div id="main" role="main" class="container">
+      <article class="post">
+  <h1>Luigi</h1>
+
+  <div class="entry">
+    <p>ETL Pipelines with Luigi</p>
+
+<h4 id="overview">Overview</h4>
+
+<p>Extract, transform, and load (ETL) pipelines are super common in big data companies.  It’s no different at <a href="http://www.healthdata.org/">IHME</a>.  Through my time at IHME, I’ve created mutiple ETL pipelines, and I’ve enjoyed working with the Python package <a href="https://github.com/spotify/luigi">luigi</a> the most.</p>
+
+<p><img src="https://www.mariowiki.com/images/5/5c/Luigi_MP10.png" alt="Luigi" /></p>
+
+<p>There are plenty of great tutorials on how to create lugi pipelines (like <a href="https://luigi.readthedocs.io/en/stable/">this</a>, <a href="https://marcobonzanini.com/2015/10/24/building-data-pipelines-with-python-and-luigi/">this</a>, and <a href="http://www.developintelligence.com/blog/2017/10/etl-management-luigi-data-pipelines/">this</a>), but I wanted to highlight a few things that I’ve done to help me monitor the pipeline and make the pipeline more efficient.</p>
+
+<h4 id="summary">Summary</h4>
+
+<p>My typical workflow will be to launch the pipeline and then monitor it periodically over the course of its runtime.  Even though luigi does a good job of making alerts through emails and things like that, I wanted to get slack messages instead.  If you’re anything like me, you’re on slack a fair bit during the day, so I figured that getting slack messages would be a far more immediate way of getting feedback from the pipeline.  Once you acquire an API key from slack, you can then work with the <a href="https://github.com/slackapi/python-slackclient">python-slackclient library</a>.  From there you can create some simple classes that will help interact with the slack API.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">from</span> <span class="nn">slackclient</span> <span class="kn">import</span> <span class="n">SlackClient</span>
+
+<span class="k">class</span> <span class="nc">SlackMessage</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="bp">None</span><span class="p">,</span> <span class="n">fields</span><span class="o">=</span><span class="p">{},</span> <span class="n">success</span><span class="o">=</span><span class="bp">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">title</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">fields</span> <span class="o">=</span> <span class="n">fields</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">success</span> <span class="o">=</span> <span class="n">success</span>
+
+<span class="k">class</span> <span class="nc">SlackAPI</span><span class="p">:</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">token</span><span class="p">,</span> <span class="n">username</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="p">[]):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">client</span> <span class="o">=</span> <span class="n">SlackClient</span><span class="p">(</span><span class="n">token</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">username</span> <span class="o">=</span> <span class="n">username</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channels</span> <span class="o">=</span> <span class="n">channels</span>
+
+    <span class="k">def</span> <span class="nf">bulk_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">,</span> <span class="n">success</span><span class="p">):</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s">"*Status Report for Pipeline*"</span>
+        <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
+            <span class="n">success_color</span> <span class="o">=</span> <span class="s">'good'</span> <span class="k">if</span> <span class="n">success</span> <span class="k">else</span> <span class="s">'danger'</span>
+            <span class="n">attachments</span> <span class="o">=</span> <span class="p">{</span><span class="s">'color'</span><span class="p">:</span> <span class="n">success_color</span><span class="p">}</span>
+
+            <span class="n">fields</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+            <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s">'title'</span><span class="p">:</span> <span class="n">title</span><span class="p">,</span> <span class="s">'value'</span><span class="p">:</span> <span class="n">message</span><span class="p">,</span> <span class="s">'short'</span><span class="p">:</span> <span class="bp">False</span><span class="p">})</span>
+
+            <span class="n">attachments</span><span class="p">[</span><span class="s">'fields'</span><span class="p">]</span> <span class="o">=</span> <span class="n">fields</span>
+            <span class="n">attachments</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">([</span><span class="n">attachments</span><span class="p">])</span>
+
+            <span class="bp">self</span><span class="o">.</span><span class="n">client</span><span class="o">.</span><span class="n">api_call</span><span class="p">(</span><span class="s">'chat.postMessage'</span><span class="p">,</span>
+                                 <span class="n">text</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                                 <span class="n">attachments</span><span class="o">=</span><span class="n">attachments</span><span class="p">,</span>
+                                 <span class="n">channel</span><span class="o">=</span><span class="n">channel</span><span class="p">,</span>
+                                 <span class="n">username</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">username</span><span class="p">)</span>
+
+            <span class="k">return</span> <span class="bp">True</span>
+</code></pre></div></div>
+
+<p>In the <code class="highlighter-rouge">SlackMessage</code> <code class="highlighter-rouge">__init__</code>, the parameter <code class="highlighter-rouge">success</code> will either make the message show up in green or red.  This makes it easy to see immediately if that stage of the pipeline succeeded or failed.  This can then be easily pulled into the luigi framework.</p>
+
+<p>If we want to get a message in slack to see if each step of the pipeline has succeeded or failed, we need to override the <code class="highlighter-rouge">SUCCESS</code> and <code class="highlighter-rouge">FAILURE</code> events of the <code class="highlighter-rouge">luigi.Task</code> class.  This allows us to make a custom defined success / failure function that will get launched after a task has succeeded / failed.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">EventHandlerTask</span><span class="p">(</span><span class="n">luigi</span><span class="o">.</span><span class="n">Task</span><span class="p">):</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"slack_token.txt"</span><span class="p">,</span> <span class="s">'r'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">token</span> <span class="o">=</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="n">bot</span> <span class="o">=</span> <span class="n">SlackAPI</span><span class="p">(</span><span class="n">token</span><span class="p">,</span> <span class="n">username</span><span class="o">=</span><span class="s">"LuigiBot"</span><span class="p">,</span> <span class="n">channels</span><span class="o">=</span><span class="p">[</span><span class="s">"@your_user_name_here"</span><span class="p">])</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"SlackBot failed to initialize"</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="nd">@luigi.Task.event_handler</span><span class="p">(</span><span class="n">luigi</span><span class="o">.</span><span class="n">Event</span><span class="o">.</span><span class="n">SUCCESS</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">success_slack</span><span class="p">(</span><span class="n">cls</span><span class="p">):</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="bp">True</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s">"{task} has successfully completed"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">cls</span><span class="p">)</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">bot</span><span class="o">.</span><span class="n">bulk_message</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="nd">@luigi.Task.event_handler</span><span class="p">(</span><span class="n">luigi</span><span class="o">.</span><span class="n">Event</span><span class="o">.</span><span class="n">FAILURE</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">failure_slack</span><span class="p">(</span><span class="n">cls</span><span class="p">,</span> <span class="n">exception</span><span class="p">):</span>
+        <span class="n">success</span> <span class="o">=</span> <span class="bp">False</span>
+        <span class="n">message</span> <span class="o">=</span> <span class="s">"{task} has failed with the following error:</span><span class="se">\n</span><span class="s">{error}"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">task</span><span class="o">=</span><span class="n">cls</span><span class="p">,</span> <span class="n">error</span><span class="o">=</span><span class="n">exception</span><span class="p">)</span>
+        <span class="n">cls</span><span class="o">.</span><span class="n">bot</span><span class="o">.</span><span class="n">bulk_message</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span> <span class="n">success</span><span class="o">=</span><span class="n">success</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>As you can see we are creating a class that inherits from the <code class="highlighter-rouge">luigi.Task</code>, and then we override the <code class="highlighter-rouge">SUCCESS</code> and <code class="highlighter-rouge">FAILURE</code> events.  That’s it!  Now we can implement this in our ETL pipeline:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">class</span> <span class="nc">random_task</span><span class="p">(</span><span class="n">EventHandlerTask</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">output</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s">"random_file.txt"</span>
+
+    <span class="k">def</span> <span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">"random_file.txt"</span><span class="p">,</span> <span class="s">"w+"</span><span class="p">)</span> <span class="k">as</span> <span class="nb">file</span><span class="p">:</span>
+            <span class="nb">file</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s">"Success!"</span><span class="p">)</span>
+</code></pre></div></div>
+
+<p>This example will write to a text file called <code class="highlighter-rouge">random_file.txt</code>, and once completed, the <code class="highlighter-rouge">LuigiBot</code> will send a slack message to you saying that the task has completed successfully.</p>
+
+<h4 id="summary-1">Summary</h4>
+
+<p>Monitoring ETL pipelines is super important and getting slack messages about the pipeline allows for peace of mind that everything is running smoothly.  This is particularly useful when you have steps in the pipeline that run for a very long time and you want to just be alerted once it finishes.</p>
+
+  </div>
+
+  <div class="date">
+    Written on May 17, 2018
+  </div>
+
+  
+</article>
+    </div>
+
+    <div class="wrapper-footer">
+      <div class="container">
+        <footer class="footer">
+          
+<a href="mailto:westford14@gmail.com"><i class="svg-icon email"></i></a>
+
+
+<a href="https://github.com/westford14/westford14.github.io"><i class="svg-icon github"></i></a>
+
+<a href="https://www.linkedin.com/in/https://www.linkedin.com/in/alex-lee-59078979"><i class="svg-icon linkedin"></i></a>
+
+
+
+
+
+
+        </footer>
+      </div>
+    </div>
+
+    
+  </body>
+</html>
