@@ -1,0 +1,93 @@
+<p>Neural Net Stacking – Why?</p>
+
+<h4 id="overview">Overview</h4>
+
+<p>Stacking is a classic machine learning ensemble technique where we train a second-level that learns how to combine the predictions of the base learners to generate better predictions.</p>
+
+<p><img src="https://qph.fs.quoracdn.net/main-qimg-b22447659f3f63822bc97ba3eff8a546-c" alt="Stacking" /></p>
+
+<p>This image succintly shows how stacking works.  In a classification problem we would train any number of classifiers and then take the resultant predictions and fit a new neural network that will blend these predictions to get even better performance.  I first ran across this idea when I worked on a new NLP task; classifying scientific literature.  I trained three classifiers with three distinct architectures, a convolutional neural network, a <a href="https://en.wikipedia.org/wiki/Long_short-term_memory">long short-term memory recurrent neural network</a>, and an <a href="https://arxiv.org/pdf/1706.03762.pdf">attention network</a>.  Each one of the networks performed well when presented with particular types of scientific literature, but I wanted to figure out a way to combine their performances to create an even better classifier.  Inititally just averaged the predictions and then used the resultant average, but I ran across the idea of stacking and thought it was worth pursuing.</p>
+
+<h4 id="code">Code</h4>
+
+<p>As always, we’ll start with a few imports:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+
+<span class="kn">import</span> <span class="nn">keras.backend</span> <span class="k">as</span> <span class="n">K</span>
+<span class="kn">from</span> <span class="nn">keras.models</span> <span class="kn">import</span> <span class="n">load_model</span><span class="p">,</span> <span class="n">Sequential</span>
+<span class="kn">from</span> <span class="nn">keras.layers</span> <span class="kn">import</span> <span class="n">Dense</span><span class="p">,</span> <span class="n">Dropout</span><span class="p">,</span> <span class="n">Activation</span>
+<span class="kn">from</span> <span class="nn">keras.optimizers</span> <span class="kn">import</span> <span class="n">Adam</span>
+</code></pre></div></div>
+
+<p>Next, we’ll build the model:</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="k">def</span> <span class="nf">build_stack</span><span class="p">():</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">Sequential</span><span class="p">()</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="n">input_dim</span><span class="o">=</span><span class="mi">6</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.7</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">50</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s">'relu'</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.7</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Dense</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">Activation</span><span class="p">(</span><span class="s">'softmax'</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">model</span>
+
+<span class="n">combine_model</span> <span class="o">=</span> <span class="n">build_stack</span><span class="p">()</span>
+<span class="n">adam</span> <span class="o">=</span> <span class="n">Adam</span><span class="p">()</span>
+<span class="n">combine_model</span><span class="o">.</span><span class="nb">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="n">adam</span><span class="p">,</span>
+                      <span class="n">loss</span><span class="o">=</span><span class="s">'categorical_crossentropy'</span><span class="p">,</span>
+                      <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s">'accuracy'</span><span class="p">])</span>
+</code></pre></div></div>
+
+<p>It’s important to note that I’m using <code class="highlighter-rouge">input_dim=6</code>, which implies that I’m taking the 3 base model’s predictions and flattening them into a one-dimensional vector.  I’ll next import the 3 base models and train the stacked classifier.</p>
+
+<div class="language-python highlighter-rouge"><div class="highlight"><pre class="highlight"><code><span class="n">attn</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s">"attn.hdf5"</span><span class="p">)</span>
+<span class="n">lstm</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s">"lstm.hdf5"</span><span class="p">)</span>
+<span class="n">cnn</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="s">"cnn.hdf5"</span><span class="p">)</span>
+
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">50</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">32</span>
+<span class="n">num_batches</span> <span class="o">=</span> <span class="n">x_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="n">batch_size</span>
+<span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+<span class="n">accuracy</span> <span class="o">=</span> <span class="mi">0</span>
+<span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">epochs</span><span class="p">):</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">permutation</span><span class="p">(</span><span class="n">x_train</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">x_</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+    <span class="n">y_</span> <span class="o">=</span> <span class="n">x_train</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+    
+    <span class="n">loss_</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">accuracy_</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">tqdm_notebook</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">num_batches</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)):</span>
+        <span class="n">x__</span> <span class="o">=</span> <span class="n">x_</span><span class="p">[</span><span class="n">batch</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="p">(</span><span class="n">batch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">y__</span> <span class="o">=</span> <span class="n">y_</span><span class="p">[</span><span class="n">batch</span> <span class="o">*</span> <span class="n">batch_size</span><span class="p">:</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="p">(</span><span class="n">batch</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        
+        <span class="n">a_preds</span> <span class="o">=</span> <span class="n">attn</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x__</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">l_preds</span> <span class="o">=</span> <span class="n">lstm</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x__</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        <span class="n">c_preds</span> <span class="o">=</span> <span class="n">cnn</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x__</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+        
+        <span class="n">preds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">a_preds</span><span class="p">,</span> <span class="n">l_preds</span><span class="p">,</span> <span class="n">c_preds</span><span class="p">))</span>
+        <span class="n">l</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">combine_model</span><span class="o">.</span><span class="n">train_on_batch</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">y__</span><span class="p">,</span> <span class="n">class_weight</span><span class="o">=</span><span class="n">c_weight</span><span class="p">)</span>
+        <span class="n">loss_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">l</span><span class="p">)</span>
+        <span class="n">accuracy_</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">a</span><span class="p">)</span>
+        
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss_</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">loss</span><span class="p">:</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss_</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">"Saving New Best: {}"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">loss</span><span class="p">))</span>
+        <span class="n">combine_model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s">"ep_{}_{:.4f}.hdf5"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">loss</span><span class="p">))</span>
+        
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">accuracy_</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">accuracy</span><span class="p">:</span>
+        <span class="n">accuracy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">accuracy_</span><span class="p">)</span>
+        
+    <span class="k">print</span><span class="p">(</span><span class="s">"Ep {}: Loss: {:.4f}  Accuracy: {:.4f}"</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss_</span><span class="p">),</span> 
+                                                         <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">accuracy_</span><span class="p">)))</span>
+</code></pre></div></div>
+
+<p>It looks like a lot of code, but it’s a pretty simple process.  I take the training dataset <code class="highlighter-rouge">x_train</code> and have the 3 base models make predictions.  Those resultant predictions are then reshaped and passed into stacked model.  I like to checkpoint my models, so I’m saving weights for every epoch that has a lower loss than the previous epoch.</p>
+
+<p>That’s it!  It might seem like unnecessary work, but I’ve found that it can boost your performance that little bit extra.  I wouldn’t always recommend doing this, but I think for this use case it was a good path to follow.</p>
+
+<h4 id="summary">Summary</h4>
+
+<p>Stacking can be super useful if you know each of your base models have good performance but each one struggles under certain conditions.  This allows use to create a combined model that will produce even better results than the base models individually.  I would hazard that this isn’t always the best route to follow, but it definitely that is something worth trying!</p>

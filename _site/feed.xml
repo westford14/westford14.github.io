@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-05-17T13:44:46-07:00</updated><id>http://localhost:4000/</id><title type="html">Alex Lee</title><subtitle>Data Scientist with a Public Health Emphasis</subtitle><entry><title type="html">Luigi</title><link href="http://localhost:4000/luigi/" rel="alternate" type="text/html" title="Luigi" /><published>2018-05-17T00:00:00-07:00</published><updated>2018-05-17T00:00:00-07:00</updated><id>http://localhost:4000/luigi</id><content type="html" xml:base="http://localhost:4000/luigi/">&lt;p&gt;ETL Pipelines with Luigi&lt;/p&gt;
+<?xml version="1.0" encoding="utf-8"?><feed xmlns="http://www.w3.org/2005/Atom" ><generator uri="https://jekyllrb.com/" version="3.7.3">Jekyll</generator><link href="http://localhost:4000/feed.xml" rel="self" type="application/atom+xml" /><link href="http://localhost:4000/" rel="alternate" type="text/html" /><updated>2018-05-20T17:01:31-07:00</updated><id>http://localhost:4000/</id><title type="html">Alex Lee</title><subtitle>Data Scientist with a Public Health Emphasis</subtitle><entry><title type="html">Luigi</title><link href="http://localhost:4000/luigi/" rel="alternate" type="text/html" title="Luigi" /><published>2018-05-17T00:00:00-07:00</published><updated>2018-05-17T00:00:00-07:00</updated><id>http://localhost:4000/luigi</id><content type="html" xml:base="http://localhost:4000/luigi/">&lt;p&gt;ETL Pipelines with Luigi&lt;/p&gt;
 
 &lt;h4 id=&quot;overview&quot;&gt;Overview&lt;/h4&gt;
 
@@ -8,7 +8,7 @@
 
 &lt;p&gt;There are plenty of great tutorials on how to create lugi pipelines (like &lt;a href=&quot;https://luigi.readthedocs.io/en/stable/&quot;&gt;this&lt;/a&gt;, &lt;a href=&quot;https://marcobonzanini.com/2015/10/24/building-data-pipelines-with-python-and-luigi/&quot;&gt;this&lt;/a&gt;, and &lt;a href=&quot;http://www.developintelligence.com/blog/2017/10/etl-management-luigi-data-pipelines/&quot;&gt;this&lt;/a&gt;), but I wanted to highlight a few things that I’ve done to help me monitor the pipeline and make the pipeline more efficient.&lt;/p&gt;
 
-&lt;h4 id=&quot;summary&quot;&gt;Summary&lt;/h4&gt;
+&lt;h4 id=&quot;code&quot;&gt;Code&lt;/h4&gt;
 
 &lt;p&gt;My typical workflow will be to launch the pipeline and then monitor it periodically over the course of its runtime.  Even though luigi does a good job of making alerts through emails and things like that, I wanted to get slack messages instead.  If you’re anything like me, you’re on slack a fair bit during the day, so I figured that getting slack messages would be a far more immediate way of getting feedback from the pipeline.  Once you acquire an API key from slack, you can then work with the &lt;a href=&quot;https://github.com/slackapi/python-slackclient&quot;&gt;python-slackclient library&lt;/a&gt;.  From there you can create some simple classes that will help interact with the slack API.&lt;/p&gt;
 
@@ -89,7 +89,7 @@
 
 &lt;p&gt;This example will write to a text file called &lt;code class=&quot;highlighter-rouge&quot;&gt;random_file.txt&lt;/code&gt;, and once completed, the &lt;code class=&quot;highlighter-rouge&quot;&gt;LuigiBot&lt;/code&gt; will send a slack message to you saying that the task has completed successfully.&lt;/p&gt;
 
-&lt;h4 id=&quot;summary-1&quot;&gt;Summary&lt;/h4&gt;
+&lt;h4 id=&quot;summary&quot;&gt;Summary&lt;/h4&gt;
 
 &lt;p&gt;Monitoring ETL pipelines is super important and getting slack messages about the pipeline allows for peace of mind that everything is running smoothly.  This is particularly useful when you have steps in the pipeline that run for a very long time and you want to just be alerted once it finishes.&lt;/p&gt;</content><author><name></name></author><summary type="html">ETL Pipelines with Luigi</summary></entry><entry><title type="html">Neural Net Stacking</title><link href="http://localhost:4000/ensemble/" rel="alternate" type="text/html" title="Neural Net Stacking" /><published>2018-05-17T00:00:00-07:00</published><updated>2018-05-17T00:00:00-07:00</updated><id>http://localhost:4000/ensemble</id><content type="html" xml:base="http://localhost:4000/ensemble/">&lt;p&gt;Neural Net Stacking – Why?&lt;/p&gt;
 
