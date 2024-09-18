@@ -1,0 +1,209 @@
+<!DOCTYPE HTML>
+<!--
+	Forty by HTML5 UP
+	html5up.net | @ajlkn
+	Free for personal and commercial use under the CCA 3.0 license (html5up.net/license)
+-->
+<html>
+	<head>
+		<title>Resume</title>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
+		<link rel="stylesheet" href="assets/css/main.css" />
+		<noscript><link rel="stylesheet" href="assets/css/noscript.css" /></noscript>
+	</head>
+	<body class="is-preload">
+
+		<!-- Wrapper -->
+			<div id="wrapper">
+
+				<!-- Header -->
+					<header id="header">
+						<a href="index.html" class="logo">Fat Badger Productions</a>
+						<nav>
+							<a href="#menu">Menu</a>
+						</nav>
+					</header>
+
+				<!-- Menu -->
+					<nav id="menu">
+						<ul class="links">
+							<li><a href="index.html">Home</a></li>
+							<li><a href="resume.html">Resume</a></li>
+							<li><a href="lets_work.html">Let's Work Together</a></li>
+							<li><a href="blog.html">Blog</a></li>
+						</ul>
+						<ul class="actions stacked">
+							<li><a href="lets_work.html" class="button primary fit">Contact Me</a></li>
+						</ul>
+					</nav>
+
+				<!-- Main -->
+					<div id="main" class="alt">
+
+						<!-- One -->
+							<section id="one">
+								<div class="inner">
+									<header class="major">
+										<h1>Who Am I?</h1>
+									</header>
+									<span class="image main"><img src="images/pic12.jpg" alt="" /></span>
+									<h2>Technical Experience</h2>
+									<p><img src="images/aprime.jpeg" alt="" height="3%" width="3%" style="float:left;padding-right: 10px;"><a href="https://aprime.io/">APrime Technology</a>&emsp;Senior Software Engineer&emsp;2022-Present</p>
+									<p>
+										During my time at APrime, I was a consultant that focused primarily on data engineering and devops.  
+										During my time consulting, I worked with companies ranging from pre-seed funding all the way through Series 
+										B companies across industries including ETF investmenting, usage-based billing platforms, benefits 
+										reimbursal, and many others.  For larger companies I worked embedded in existing engineering teams and 
+										for smaller companies I worked more greenfield suggesting and implementing best practices.  Because of this, 
+										I worked with a wide-range of different technologies and languages that addressed problems such as running a 
+										a GCP to AWS cloud migration, full private VPC migration, in-place kubernetes upgrades, custom Go based 
+										migration tool, full end-to-end machine learning pipeline using Prefect and R, migration of AWS Step 
+										Functions to Dagster, and others.
+									</p>
+									<p><img src="images/nytimes.jpeg" alt="" height="3%" width="3%" style="float:left;padding-right: 10px;"><a href="https://www.nytimes.com/">New York Times</a>&emsp;Senior Software Engineer; Machine Learning Infrastructure&emsp;2021-2022</p>
+									<p>
+										My title at the New York Times is a bit wordy, but I, essentially, worked on the machine learning platform 
+										team that was in charge of serving all recommendations to end users.  This includes things like recommending 
+										articles that a user might like, generating a top-5 of articles to read for a user, and creating a newsletter 
+										to drive users to the frontpage.  I focused mostly on revamping the CI/CD process during this time to reduce 
+										deploy times as well as migrating our kubernetes cluster to a service mesh to allow for shadow and canary 
+										deployments.<br>
+										Our endpoints received thousands of requests per second and we had a SLA of around 100 milliseconds to return 
+										a response to the internal gateway API.  Given this, all of our models were written and experimented in Python 
+										but then subsequently translated into Golang to provide the best latency possible.
+									</p>
+									<p><img src="images/bark.jpeg" alt="" height="3%" width="3%" style="float:left;padding-right: 10px;"><a href="https://bark.co/">Bark</a>&emsp;Data Scientist to Machine Learning Engineer&emsp;2019-2021</p></p>
+									<p>
+										I worked in a number of different roles at Bark, but I started as a data scientist and worked my up to a machine 
+										learning engineer.  This meant that I started off working on our recommendation engine that we used to try and get 
+										users to add extra products to their monthly shipments.  But, this also spun off into projects including trying 
+										to predict an estimated time of delivery and running survival analysis on our subscribers.  Over time, though, 
+										I need to work further and further back in the stack and started shifting my focus from just the model but to the 
+										whole model lifecycle (i.e. how do we deploy, monitor, and update models safely).  This involved standardizing all 
+										of our model training using KubeFlow (on GCP) to deploying models with TensorFlow Serving.<br>
+										Of course, there were a number of other projects that came up, as is common in any startup.  I migrated our MongoDB 
+										instance to Amazon Redshift, did some causal analysis to try and determine the effectives of our interventions in 
+										preventing subscriber churn, improved our sampling weighting to better capture a stratified random sample for our 
+										NPS survey, and creating a microservice to deploy our predictions rather than running everything as a batch process.
+									</p>
+									<p><img src="images/trendalytics.jpeg" alt="" height="3%" width="3%" style="float:left;padding-right: 10px;"><a href="https://www.trendalytics.co/">Trendalytics</a>&emsp;Software Engineer; Machine Learning&emsp;2018-2019</p></p>
+									<p>
+										We were focused here on doing lots of image segmentation, image processing, and time-series analysis to try and 
+										predict upcoming fashion trends for clients.  Most of my time here was spent on improving our implementation of the 
+										Yolo algorithm we were using for image segmentation and also looking at how we can combine a bunch of different 
+										model outputs (i.e. keyword search trends, NLP text extractions, and image vectors) into one singular usable score 
+										for our clients to action upon.
+									</p>
+									<p><img src="images/ihme.jpeg" alt="" height="3%" width="3%" style="float:left;padding-right: 10px;"><a href="https://www.healthdata.org/">Institute for Health Metrics and Evaluation</a>&emsp;Data Analyst, Machine Learning Data Specialist&emsp;2016-2018</p></p>
+									<p><img src="images/nhgri.jpeg" alt="" height="3%" width="3%" style="float:left;padding-right: 10px;"><a href="https://www.genome.gov/">National Human Genome Research Institute</a>&emsp;Data Analyst&emsp;2014-2016</p></p>
+									<h2>Competencies</h2>
+									<p>Cloud Computing Environments:&emsp;
+										<a href="https://aws.amazon.com/">AWS</a>, <a href="https://cloud.google.com/">GCP</a>, <a href="https://azure.microsoft.com/en-us">Azure</a>
+									</p>
+									<p>Container Orchestration:&emsp;
+										<a href="https://kubernetes.io/">Kubernetes</a>, <a href="https://helm.sh/">Helm</a>, <a href="https://kustomize.io/">Kustomize</a>, <a href="https://grafana.com/">Grafana</a>, <a href="https://argoproj.github.io/rollouts/">Argo Rollouts</a>, <a href="https://istio.io/">Istio</a>
+									</p>
+									<p>Machine Learning Platforms:&emsp;
+										<a href="https://aws.amazon.com/sagemaker/">SageMaker</a>, <a href="https://cloud.google.com/vertex-ai">Vertex</a>, <a href="https://www.kubeflow.org/">KubeFlow</a>, <a href="https://www.databricks.com/">DataBricks</a>
+									</p>
+									<p>Infrastructure as Code:&emsp;
+										<a href="https://www.terraform.io/">Terraform</a>, <a href="https://terragrunt.gruntwork.io/">Terragrunt</a>, <a href="https://www.runatlantis.io/">Atlantis</a>
+									</p>
+									<p>CI/CD:&emsp;
+										<a href="https://circleci.com/">CircleCI</a>, <a href="https://about.gitlab.com/">GitLab</a>, <a href="https://github.com/features/actions">GitHub Actions</a>, <a href="https://www.drone.io/">Drone CI</a>
+									</p>
+									<p>Data Engineering Platforms:&emsp;
+										<a href="https://www.prefect.io/">Prefect</a>, <a href="https://dagster.io/">Dagster</a>, <a href="https://airflow.apache.org/">Airflow</a>
+									</p>
+									<p>Languages:&emsp;
+										<a href="https://go.dev/">Golang</a>, <a href="https://www.python.org/">Python</a>, <a href="https://www.typescriptlang.org/">TypeScript</a>, <a href="https://www.r-project.org/">R</a>, <a href="https://www.stata.com/">Stata</a>
+									</p>
+									<p>Data Stores & Data Streaming:&emsp;
+										<a href="https://www.postgresql.org/">PostgreSQL</a>, <a href="https://www.mysql.com/">MySQL</a>, <a href="https://graphql.org/">GraphQL</a>, <a href="https://www.mongodb.com/">MongoDB</a>, <a href="https://www.confluent.io/">Confluent</a>, <a href="https://www.elastic.co/elasticsearch">ElasticSearch</a>
+									</p>
+									<h2>Education</h2>
+									<p><a href="https://www.wur.nl/">Wageningen University</a>: <a href="https://www.wur.nl/en/education-programmes/master/msc-programmes/msc-data-science-for-food-and-health.htm">Master's Data Science for Food and Health</p></a>
+									<p><a href="https://www.haverford.edu/">Haverford College</a>: Bachelor's in Biochemistry, Minor in Art History</p>
+								</div>
+							</section>
+
+					</div>
+
+				<!-- Contact -->
+				<section id="contact">
+					<div class="inner">
+						<section>
+							<form method="post" action="#">
+								<div class="fields">
+									<div class="field half">
+										<label for="name">Name</label>
+										<input type="text" name="name" id="name" />
+									</div>
+									<div class="field half">
+										<label for="email">Email</label>
+										<input type="text" name="email" id="email" />
+									</div>
+									<div class="field">
+										<label for="message">Message</label>
+										<textarea name="message" id="message" rows="6"></textarea>
+									</div>
+								</div>
+								<ul class="actions">
+									<li><input type="submit" value="Send Message" class="primary" /></li>
+									<li><input type="reset" value="Clear" /></li>
+								</ul>
+							</form>
+						</section>
+						<section class="split">
+							<section>
+								<div class="contact-method">
+									<span class="icon solid alt fa-envelope"></span>
+									<h3>Email</h3>
+									<a href="mailto:fatbadgerproductionsllc@gmail.com">fatbadgerproductionsllc@gmail.com</a>
+								</div>
+							</section>
+							<section>
+								<div class="contact-method">
+									<span class="icon solid alt fa-phone"></span>
+									<h3>WhatsApp</h3>
+									<span>+1-404-805-4916</span>
+								</div>
+							</section>
+							<section>
+								<div class="contact-method">
+									<span class="icon solid alt fa-home"></span>
+									<h3>Location</h3>
+									<span>Arnhem, Netherlands</span>
+								</div>
+							</section>
+						</section>
+					</div>
+				</section>
+
+				<!-- Footer -->
+				<footer id="footer">
+					<div class="inner">
+						<ul class="icons">
+							<li><a href="https://github.com/westford14" class="icon brands alt fa-github"><span class="label">GitHub</span></a></li>
+							<li><a href="https://www.linkedin.com/in/alex-lee-59078979/" class="icon brands alt fa-linkedin-in"><span class="label">LinkedIn</span></a></li>
+						</ul>
+						<ul class="copyright">
+							<li>&copy; 2024</li><li>Design: <a href="https://html5up.net">HTML5 UP</a></li>
+						</ul>
+					</div>
+				</footer>
+
+			</div>
+
+		<!-- Scripts -->
+			<script src="assets/js/jquery.min.js"></script>
+			<script src="assets/js/jquery.scrolly.min.js"></script>
+			<script src="assets/js/jquery.scrollex.min.js"></script>
+			<script src="assets/js/browser.min.js"></script>
+			<script src="assets/js/breakpoints.min.js"></script>
+			<script src="assets/js/util.js"></script>
+			<script src="assets/js/main.js"></script>
+
+	</body>
+</html>
