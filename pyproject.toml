@@ -1,0 +1,54 @@
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.black]
+include = 'tests\/.*\.pyi?$|src\/.*\.pyi?$|cli\/.*\.pyi?$'
+exclude = 'cli/templates\/.*\.pyi?$|.tox\/.*\.pyi?$|.venv\/.*\.pyi?$'
+
+# let's have all of our tools agree :)
+# We already use black for formatting, so ensure it and isort agree
+[tool.isort]
+profile = "black"
+
+[tool.ruff.lint]
+ignore = [
+    # (Unused import): We stub some files with just imports to help people get started
+    "F401",
+]
+
+[tool.ruff.format]
+docstring-code-format = true
+
+[tool.poetry]
+name = "simple-server"
+version = "0.0.1"
+description = "Simple backend server"
+authors = [
+    "Alex Lee <westford14@gmail.com>"
+]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.11"
+flask = "*"
+requests = "*"
+flask-mail = "^0.10.0"
+gevent = "^24.2.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "*"
+flake8 = "*"
+flake8-bugbear = "*"
+flake8-commas = "*"
+flake8-docstrings = "*"
+flake8-formatter-abspath = "*"
+flake8-import-order = "*"
+mypy = "<1.5"
+pep8-naming = "*"
+pylint = "*"
+pytest = "*"
+pytest-cov = "*"
+pydocstyle = "*"
+tox = "*"
+isort = "*"

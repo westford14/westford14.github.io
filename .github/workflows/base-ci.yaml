@@ -1,0 +1,45 @@
+name: Base CI Checks
+on:
+  # https://help.github.com/en/actions/reference/events-that-trigger-workflows#pull-request-event-pull_request
+  pull_request:
+    types: [opened, synchronize, reopened]
+    # Only run for PRs with main as base branch
+    branches:
+      - main
+
+env:
+  # Force pipenv to create virtualenv in .venv dir (relative to repo's root dir)
+  PIPENV_VENV_IN_PROJECT: 1
+
+jobs:
+
+  lint-python:
+    name: Run style and type checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Python
+        id: python-setup
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11.6
+
+      - uses: actions/cache@v2
+        id: poetry-cache
+        with:
+          path: ~/.cache
+          key: ${{ runner.os }}-${{ steps.python-setup.outputs.python-version }}-${{ hashFiles('poetry.lock') }}
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Install dev packages
+        if: steps.poetry-cache.outputs.cache-hit != 'true'
+        run: poetry install --with dev
+
+      - name: Run linters
+        run: poetry run tox -e lint
+
+      - name: Run type checker
+        run: poetry run tox -e type-check
