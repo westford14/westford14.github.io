@@ -149,7 +149,6 @@ dmypy.json
 
 # Extra files
 *.csv
-*.pdf
 
 # Jupyter Notebooks
 .ipynb_checkpoints
